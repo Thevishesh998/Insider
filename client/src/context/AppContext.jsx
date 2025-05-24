@@ -6,6 +6,8 @@ import { JobCategories, JobLocations, jobsData } from "../assets/assets";
  
  export const AppContextProvider = (props) => {
 
+    const backendUrl = import.meta.env.VITE_BACKEND_URL
+
     const[searchFilter, setSearchFilter] = useState({
         title:'',
         location:''
@@ -17,13 +19,25 @@ import { JobCategories, JobLocations, jobsData } from "../assets/assets";
 
     const [showRecruiterLogin, setShowRecruiterLogin] = useState(false)
 
+    const [companyToken, setCompanyToken] = useState(null)
+    const [companyData, setCompanyData] = useState(null)
+
+
     //Function to fetch jobs
     const fetchJobs = async () => {
           setJobs(jobsData)
     }
+    //Functiobn to fetch company data
+    
 
     useEffect(()=>{
         fetchJobs()
+
+        const storedCompanyToken = localStorage.getItem('companyToken')
+        if(storedCompanyToken){
+          setCompanyToken(storedCompanyToken)
+        }
+
     },[])
 
 
@@ -32,6 +46,9 @@ import { JobCategories, JobLocations, jobsData } from "../assets/assets";
         isSearched,setIsSearched,jobsData,
         jobs, setJobs, JobCategories, JobLocations,
         showRecruiterLogin, setShowRecruiterLogin,
+        companyToken, setCompanyToken,
+        companyData, setCompanyData,
+        backendUrl
 
     };
     return (
