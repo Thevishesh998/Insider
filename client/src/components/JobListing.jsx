@@ -3,16 +3,16 @@ import { JobContext } from "../context/AppContext";
 import { AppContext } from "../context/AppContext";
 import { assets } from "../assets/assets";
 import JobCard from "./JobCard";
+import axios from "axios";
+import { useAuth } from "@clerk/clerk-react";
 
 const JobListing = () => {
+  const { backendUrl } = useContext(AppContext);
+  const { getToken } = useAuth();
+  const [appliedJobs, setAppliedJobs] = useState([]);
   const [showFilter, setShowFilter] = useState(false);
-  const {
-    jobs,
-    JobCategories,
-    JobLocations,
-    searchFilter,
-    setSearchFilter,
-  } = useContext(AppContext);
+  const { jobs, JobCategories, JobLocations, searchFilter, setSearchFilter } =
+    useContext(AppContext);
 
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [selectedLocations, setSelectedLocations] = useState([]);
@@ -21,21 +21,41 @@ const JobListing = () => {
 
   const handleCategoryChange = (category) => {
     setSelectedCategories((prev) =>
-      prev.includes(category) ? prev.filter((c) => c !== category) : [...prev, category]
+      prev.includes(category)
+        ? prev.filter((c) => c !== category)
+        : [...prev, category],
     );
+  };
+
+  const fetchAppliedJobs = async () => {
+    const token = await getToken();
+
+    const { data } = await axios.get(backendUrl + "/api/users/applications", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (data.success) {
+      setAppliedJobs(data.applications.map((item) => item.jobId._id));
+    }
   };
 
   const handleLocationChange = (location) => {
     setSelectedLocations((prev) =>
-      prev.includes(location) ? prev.filter((c) => c !== location) : [...prev, location]
+      prev.includes(location)
+        ? prev.filter((c) => c !== location)
+        : [...prev, location],
     );
   };
 
   useEffect(() => {
     const matchesCategory = (job) =>
-      selectedCategories.length === 0 || selectedCategories.includes(job.category);
+      selectedCategories.length === 0 ||
+      selectedCategories.includes(job.category);
     const matchesLocation = (job) =>
-      selectedLocations.length === 0 || selectedLocations.includes(job.location);
+      selectedLocations.length === 0 ||
+      selectedLocations.includes(job.location);
     const matchesTitle = (job) =>
       searchFilter.title === "" ||
       job.title.toLowerCase().includes(searchFilter.title.toLowerCase());
@@ -51,12 +71,16 @@ const JobListing = () => {
           matchesCategory(job) &&
           matchesLocation(job) &&
           matchesTitle(job) &&
-          matchesSearchLocation(job)
+          matchesSearchLocation(job),
       );
 
     setFilteredJobs(newFilteredJobs);
     setCurrentPage(1);
   }, [jobs, selectedCategories, selectedLocations, searchFilter]);
+
+  useEffect(() => {
+    fetchAppliedJobs();
+  }, []);
 
   return (
     <>
@@ -70,7 +94,9 @@ const JobListing = () => {
                 {searchFilter.title}{" "}
                 <button
                   className="ml-1 text-red-500"
-                  onClick={() => setSearchFilter({ ...searchFilter, title: "" })}
+                  onClick={() =>
+                    setSearchFilter({ ...searchFilter, title: "" })
+                  }
                 >
                   ✕
                 </button>
@@ -81,7 +107,9 @@ const JobListing = () => {
                 {searchFilter.location}{" "}
                 <button
                   className="ml-1 text-red-500"
-                  onClick={() => setSearchFilter({ ...searchFilter, location: "" })}
+                  onClick={() =>
+                    setSearchFilter({ ...searchFilter, location: "" })
+                  }
                 >
                   ✕
                 </button>
@@ -100,7 +128,9 @@ const JobListing = () => {
 
       <div className="flex">
         {/* Filters */}
-        <div className={`w-full lg:w-1/4 bg-white px-4 ${showFilter ? "" : "max-lg:hidden"}`}>
+        <div
+          className={`w-full lg:w-1/4 bg-white px-4 ${showFilter ? "" : "max-lg:hidden"}`}
+        >
           <h4 className="font-medium text-lg py-4">Search by Categories</h4>
           <ul className="space-y-4 text-gray-600">
             {JobCategories.map((category, index) => (
@@ -143,7 +173,11 @@ const JobListing = () => {
             {filteredJobs
               .slice((currentPage - 1) * 6, currentPage * 6)
               .map((job, index) => (
-                <JobCard key={index} job={job} />
+                <JobCard
+                  key={index}
+                  job={job}
+                  isApplied={appliedJobs.includes(job._id)}
+                />
               ))}
           </div>
 
@@ -160,24 +194,33 @@ const JobListing = () => {
               </a>
 
               {/* Page numbers */}
-              {Array.from({ length: Math.ceil(filteredJobs.length / 6) }).map((_, index) => (
-                <a href="#job-list" key={index}>
-                  <button
-                    onClick={() => setCurrentPage(index + 1)}
-                    className={`w-10 h-10 flex items-center justify-center border rounded ${
-                      currentPage === index + 1 ? "bg-blue-500 text-white" : ""
-                    }`}
-                  >
-                    {index + 1}
-                  </button>
-                </a>
-              ))}
+              {Array.from({ length: Math.ceil(filteredJobs.length / 6) }).map(
+                (_, index) => (
+                  <a href="#job-list" key={index}>
+                    <button
+                      onClick={() => setCurrentPage(index + 1)}
+                      className={`w-10 h-10 flex items-center justify-center border rounded ${
+                        currentPage === index + 1
+                          ? "bg-blue-500 text-white"
+                          : ""
+                      }`}
+                    >
+                      {index + 1}
+                    </button>
+                  </a>
+                ),
+              )}
 
               {/* Right arrow (next page) */}
               <a href="#job-list">
                 <img
                   onClick={() =>
-                    setCurrentPage(Math.min(currentPage + 1, Math.ceil(filteredJobs.length / 6)))
+                    setCurrentPage(
+                      Math.min(
+                        currentPage + 1,
+                        Math.ceil(filteredJobs.length / 6),
+                      ),
+                    )
                   }
                   src={assets.right_arrow_icon}
                   alt="Next"
