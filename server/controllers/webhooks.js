@@ -8,7 +8,8 @@ export const clerkWebhooks = async (req,res) => {
          const whook = new Webhook (process.env.CLERK_WEBHOOK_SECRET)
 
          //Verifying headers
-         await whook.verify(JSON.stringify(req.body),{
+         const payload = req.body.toString('utf8')
+         await whook.verify(payload,{
             "svix-id": req.headers["svix-id"],
             "svix-timestamp": req.headers["svix-timestamp"],
             "svix-signature": req.headers["svix-signature"]
@@ -16,7 +17,7 @@ export const clerkWebhooks = async (req,res) => {
 
 
          //Getting data from request body
-         const {data, type} = req.body
+         const {data, type} = JSON.parse(payload)
 
          //Switch case for different events
          switch(type)
@@ -29,8 +30,8 @@ export const clerkWebhooks = async (req,res) => {
                     image: data.image_url,
                     resume: ''
                   }
-                  await User.create(userData)
-                  res.json({})
+                  await User.findByIdAndUpdate(data.id, userData, {upsert: true, new: true, setDefaultsOnInsert: true})
+                  return res.json({})
                   break;
               }
 
@@ -41,24 +42,22 @@ export const clerkWebhooks = async (req,res) => {
                     image: data.image_url,
                   }
                   await User.findByIdAndUpdate(data.id, userData)
-                     res.json({})
-                     break;
+                  return res.json({})
               }
 
               case 'user.deleted':{
-                     await User.findByIdAndDelete(data.id)
-                     res.json({})
-                     break;
+                  await User.findByIdAndDelete(data.id)
+                  return res.json({})
               }
               default:
-                break;
+                return res.json({})
          }
 
     }
     catch(error)
     {
         console.log(error.message);
-        res.json({success:false, message:'Webhooks Error'})
+        res.status(400).json({success:false, message:'Webhooks Error'})
 
     }
 }

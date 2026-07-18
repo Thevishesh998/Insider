@@ -12,7 +12,7 @@ export const getJobs = async (req,res) => {
 
         res.json({success: true, jobs})
      } catch (error) {
-        res.json({success: false, message: error.message})
+        res.status(500).json({success: false, message: 'Unable to get jobs'})
      }
 }
 
@@ -22,13 +22,13 @@ export const getJobByID = async (req,res) => {
       try {
         
         const {id} = req.params
-        const job = await Job.findById(id).populate({
+        const job = await Job.findOne({_id: id, visible: true}).populate({
             path: 'companyId',
             select: '-password'
         })
 
         if(!job){
-            return res.json({
+            return res.status(404).json({
                 success: false,
                 message: 'Job not found'
             })
@@ -39,6 +39,6 @@ export const getJobByID = async (req,res) => {
             job
         })
       } catch (error) {
-        res.json({success: false, message: error.message})
+        res.status(500).json({success: false, message: 'Unable to get job'})
       }
 }

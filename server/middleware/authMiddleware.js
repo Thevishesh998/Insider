@@ -5,26 +5,23 @@ export const protectCompany = async (req, res, next) => {
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
-        return res.json({ success: false, message: 'Not authorized, Login Again' });
+        return res.status(401).json({ success: false, message: 'Session expired. Please log in again' });
     }
 
     const token = authHeader.split(" ")[1];
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        console.log("Decoded Token:", decoded);
 
         req.company = await Company.findById(decoded.id).select('-password');
-        console.log("Company Found:", req.company);
 
         if (!req.company) {
-            return res.json({ success: false, message: 'Company not found, Login Again' });
+            return res.status(401).json({ success: false, message: 'Session expired. Please log in again' });
         }
 
         next();
 
     } catch (error) {
-        console.error("JWT Error:", error);
-        res.json({ success: false, message: error.message });
+        res.status(401).json({ success: false, message: 'Session expired. Please log in again' });
     }
 };
