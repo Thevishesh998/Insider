@@ -7,7 +7,7 @@ import "quill/dist/quill.snow.css";
 
 import Quill from "quill";
 const AddJob = () => {
-  const { backendUrl, companyToken } = useContext(AppContext);
+  const { backendUrl, companyToken, logoutCompany } = useContext(AppContext);
   const [title, setTitle] = useState("");
   const [location, setLocation] = useState("Bangalore");
   const [category, setCategory] = useState("Programming");
@@ -57,7 +57,10 @@ const AddJob = () => {
         quillRef.current.root.innerHTML = "";
       }
     } catch (error) {
-      toast.error(error.message);
+      if (error.response?.status === 401) {
+        logoutCompany();
+      }
+      toast.error(error.response?.data?.message || "Unable to add job");
     }
   };
 

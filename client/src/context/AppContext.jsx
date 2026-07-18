@@ -22,6 +22,12 @@ export const AppContextProvider = (props) => {
   const [companyToken, setCompanyToken] = useState(null);
   const [companyData, setCompanyData] = useState(null);
 
+  const logoutCompany = () => {
+    localStorage.removeItem("companyToken");
+    setCompanyToken(null);
+    setCompanyData(null);
+  };
+
   // ✅ Function to fetch jobs
   const fetchJobs = async () => {
     try {
@@ -31,7 +37,7 @@ export const AppContextProvider = (props) => {
         setJobs(data.jobs)
       }
     } catch (error) {
-      console.log(error);
+      toast.error(error.response?.data?.message || "Unable to load jobs");
     }
   };
 
@@ -51,7 +57,10 @@ export const AppContextProvider = (props) => {
         toast.error(data.message);
       }
     } catch (error) {
-      toast.error(error.message);
+      if (error.response?.status === 401) {
+        logoutCompany();
+      }
+      toast.error(error.response?.data?.message || "Unable to load company data");
     }
   };
 
@@ -86,6 +95,7 @@ export const AppContextProvider = (props) => {
     setCompanyToken,
     companyData,
     setCompanyData,
+    logoutCompany,
     backendUrl,
   };
 

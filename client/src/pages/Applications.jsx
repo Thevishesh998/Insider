@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from "react";
 import Navbar from "../components/Navbar";
-import { assets, jobsApplied } from "../assets/assets";
+import { assets } from "../assets/assets";
 import moment from "moment";
 import Footer from "../components/Footer";
 import axios from "axios";
@@ -14,23 +14,73 @@ const Applications = () => {
   const [applications, setApplications] = useState([]);
   const [isEdit, setIsEdit] = useState(false);
   const [resume, setResume] = useState(null);
+  const [resumeUrl, setResumeUrl] = useState("");
 
   const fetchApplications = async () => {
-    const token = await getToken();
+    try {
+      const token = await getToken();
+      const { data } = await axios.get(backendUrl + "/api/users/applications", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-    const { data } = await axios.get(backendUrl + "/api/users/applications", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+      if (data.success) {
+        setApplications(data.applications);
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Unable to load applications");
+    }
+  };
 
-    if (data.success) {
-      setApplications(data.applications);
+  const fetchUserData = async () => {
+    try {
+      const token = await getToken();
+      const { data } = await axios.get(backendUrl + "/api/users/user", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (data.success) {
+        setResumeUrl(data.user.resume || "");
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Unable to load resume");
+    }
+  };
+
+  const saveResume = async () => {
+    if (!resume) {
+      toast.error("Please select a resume first");
+      return;
+    }
+
+    try {
+      const token = await getToken();
+      const formData = new FormData();
+      formData.append("resume", resume);
+
+      const { data } = await axios.post(
+        backendUrl + "/api/users/update-resume",
+        formData,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+
+      if (data.success) {
+        setResumeUrl(data.resume);
+        setIsEdit(false);
+        setResume(null);
+        toast.success(data.message);
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Unable to update resume");
     }
   };
 
   useEffect(() => {
     fetchApplications();
+    fetchUserData();
   }, []);
 
 
@@ -57,7 +107,7 @@ const Applications = () => {
                 <img src={assets.profile_upload_icon} alt="" />
               </label>
               <button
-                onClick={(e) => setIsEdit(false)}
+                onClick={saveResume}
                 className="bg-green-100 border border-green-400 rounded-lg px-4 py-2"
               >
                 Save
@@ -67,7 +117,7 @@ const Applications = () => {
             <div className="flex gap-2">
               <a
                 className="bg-blue-100 text-blue-600 px-4 py-2 rounded-lg"
-                href=""
+                href={resumeUrl || undefined}
               >
                 Resume
               </a>

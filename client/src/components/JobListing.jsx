@@ -5,6 +5,7 @@ import { assets } from "../assets/assets";
 import JobCard from "./JobCard";
 import axios from "axios";
 import { useAuth } from "@clerk/clerk-react";
+import { toast } from "react-toastify";
 
 const JobListing = () => {
   const { backendUrl } = useContext(AppContext);
@@ -28,16 +29,24 @@ const JobListing = () => {
   };
 
   const fetchAppliedJobs = async () => {
-    const token = await getToken();
+    try {
+      const token = await getToken();
 
-    const { data } = await axios.get(backendUrl + "/api/users/applications", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+      if (!token) {
+        return;
+      }
 
-    if (data.success) {
-      setAppliedJobs(data.applications.map((item) => item.jobId._id));
+      const { data } = await axios.get(backendUrl + "/api/users/applications", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (data.success) {
+        setAppliedJobs(data.applications.filter((item) => item.jobId).map((item) => item.jobId._id));
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Unable to load applied jobs");
     }
   };
 

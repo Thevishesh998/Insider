@@ -4,43 +4,59 @@ import axios from "axios";
 import { AppContext } from "../context/AppContext";
 import { toast } from "react-toastify";
 const ViewApplications = () => {
-  const { backendUrl, companyToken } = useContext(AppContext);
+  const { backendUrl, companyToken, logoutCompany } = useContext(AppContext);
 
   const [applications, setApplications] = useState([]);
 
   const fetchApplicants = async () => {
-    const { data } = await axios.get(backendUrl + "/api/company/applicants", {
-      headers: {
-        Authorization: `Bearer ${companyToken}`,
-      },
-    });
+    try {
+      const { data } = await axios.get(backendUrl + "/api/company/applicants", {
+        headers: {
+          Authorization: `Bearer ${companyToken}`,
+        },
+      });
 
-    if (data.success) {
-      setApplications(data.applications);
+      if (data.success) {
+        setApplications(data.applications);
+      }
+    } catch (error) {
+      if (error.response?.status === 401) {
+        logoutCompany();
+      }
+      toast.error(error.response?.data?.message || "Unable to load applicants");
     }
   };
 
   useEffect(() => {
-    fetchApplicants();
+    if (companyToken) {
+      fetchApplicants();
+    }
   }, [companyToken]);
 
   const updateStatus = async (id, status) => {
-    const { data } = await axios.post(
-      backendUrl + "/api/company/change-status",
-      {
-        applicationId: id,
-        status,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${companyToken}`,
+    try {
+      const { data } = await axios.post(
+        backendUrl + "/api/company/change-status",
+        {
+          applicationId: id,
+          status,
         },
-      },
-    );
+        {
+          headers: {
+            Authorization: `Bearer ${companyToken}`,
+          },
+        },
+      );
 
-    if (data.success) {
-      toast.success("Status Updated");
-      fetchApplicants();
+      if (data.success) {
+        toast.success("Status Updated");
+        fetchApplicants();
+      }
+    } catch (error) {
+      if (error.response?.status === 401) {
+        logoutCompany();
+      }
+      toast.error(error.response?.data?.message || "Unable to update application status");
     }
   };
   return (

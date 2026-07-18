@@ -32,6 +32,10 @@ const ApplyJob = () => {
     try {
       const token = await getToken();
 
+      if (!token) {
+        return;
+      }
+
       const { data } = await axios.get(backendUrl + "/api/users/applications", {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -46,7 +50,7 @@ const ApplyJob = () => {
         setIsApplied(applied);
       }
     } catch (error) {
-      console.log(error);
+      toast.error(error.response?.data?.message || "Unable to check application status");
     }
   };
   const handleApply = async () => {
@@ -72,8 +76,7 @@ const ApplyJob = () => {
         toast.error(data.message);
       }
     } catch (error) {
-      console.log(error);
-      toast.error(error.message);
+      toast.error(error.response?.data?.message || "Unable to apply for this job");
     }
   };
 
