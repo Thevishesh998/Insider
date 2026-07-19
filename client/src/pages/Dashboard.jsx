@@ -1,71 +1,60 @@
-import React, { useContext } from 'react'
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { assets } from '../assets/assets';
-import { AppContext } from '../context/AppContext';
+import React, { useContext } from "react";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { assets } from "../assets/assets";
+import { AppContext } from "../context/AppContext";
+
+const navigation = [
+  { to: "/dashboard", label: "Overview", image: "home_icon", end: true },
+  { to: "/dashboard/company-profile", label: "Company Profile", image: "company_icon" },
+  { to: "/dashboard/add-job", label: "Add Job", image: "add_icon" },
+  { to: "/dashboard/manage-jobs", label: "Manage Jobs", image: "home_icon" },
+  { to: "/dashboard/view-applications", label: "Applications", image: "person_tick_icon" },
+];
+
 const Dashboard = () => {
+  const navigate = useNavigate();
+  const { companyData, logoutCompany } = useContext(AppContext);
 
-    const navigate = useNavigate()
-    const {companyData, logoutCompany} = useContext(AppContext)
+  const handleLogout = () => {
+    logoutCompany();
+    navigate("/");
+  };
 
-    const handleLogout = () => {
-        logoutCompany()
-        navigate('/')
-    }
-    return (
-        <div className='min-h-screen'>
-            
-            {/* Navbar for Recruiter Panel */}
-            <div className='shadow py-4'>
-                <div className='px-5 flex justify-between items-center'>
-                    <img onClick={e => navigate('/')} className='max-sm:w-32 cursor-pointer' src={assets.logo} alt="" />
-                    {companyData && (
-                       <div className='flex items-center gap-3'>
-                        <p className='max-sm:hidden'>Welcome, {companyData.name}</p>
-                        <div className='relative group'>
-                            <img className='w-8 border rounded-full' src={companyData.image} alt="" />
-                            <div className='absolute hidden group-hover:block top-0 right-0 z-10 text-black rounded pt-12'>
-                                <ul className='list-none m-0 p-2 bg-white rounded-md border text-sm'>
-                                    <li onClick={handleLogout} className='py-1 px-2 cursor-pointer pr-10'>Logout</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div> 
-                    )}
-                    
-                </div>
-            </div>
+  return (
+    <div className="min-h-screen bg-slate-50 text-slate-900">
+      <header className="sticky top-0 z-20 border-b border-slate-200 bg-white">
+        <div className="flex h-16 items-center justify-between px-4 sm:px-6">
+          <button type="button" onClick={() => navigate("/")} className="flex items-center gap-3" aria-label="Go to home page">
+            <img className="w-28 sm:w-32" src={assets.logo} alt="Job portal" />
+            <span className="hidden border-l border-slate-200 pl-3 text-sm font-medium text-slate-500 sm:block">Recruiter workspace</span>
+          </button>
+          <div className="flex items-center gap-3">
+            <div className="hidden text-right sm:block"><p className="text-sm font-semibold text-slate-800">{companyData?.name || "Company"}</p><p className="text-xs text-slate-500">Recruiter account</p></div>
+            {companyData?.image ? <img className="h-9 w-9 rounded-full border border-slate-200 object-cover" src={companyData.image} alt="Company logo" /> : <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-100 text-sm font-semibold text-blue-700">{companyData?.name?.charAt(0)?.toUpperCase() || "C"}</div>}
+            <button type="button" onClick={handleLogout} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 sm:text-sm">Log out</button>
+          </div>
+        </div>
+      </header>
 
-            <div className='flex items-start'>
-                {/* Left Sidebar with option to add job, manage jobs, view applications */}
-                <div className='inline-block min-h-screen border-r-2'>
-                    <ul className='flex flex-col items-start pt-5 text-gray-800'>
-                        <NavLink className={({isActive})=> `flex items-center p-3 sm:px-6 gap-2 w-full hover:bg-gray-100 
-                        ${isActive && 'bg-blue-100 border-r-4 border-blue-500'}`} to={'/dashboard/add-job'}>
-                        <img className='min-w-4' src={assets.add_icon} alt="" />
-                        <p className='max-sm:hidden'>Add Job</p>
+      <div className="mx-auto flex max-w-[1600px]">
+        <aside className="sticky top-16 hidden h-[calc(100vh-4rem)] w-64 shrink-0 border-r border-slate-200 bg-white p-4 md:block">
+          <p className="px-3 pb-3 text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">Workspace</p>
+          <nav className="space-y-1">
+            {navigation.map((item) => <NavLink key={item.to} end={item.end} to={item.to} className={({ isActive }) => `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium ${isActive ? "bg-blue-50 text-blue-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"}`}>
+              {item.image ? <img className="h-4 w-4 object-contain" src={assets[item.image]} alt="" /> : <span className="flex h-4 w-4 items-center justify-center text-xs font-bold">{item.icon}</span>}
+              {item.label}
+            </NavLink>)}
+          </nav>
+        </aside>
+        <main className="min-w-0 flex-1">
+          <nav className="flex gap-1 overflow-x-auto border-b border-slate-200 bg-white px-3 py-2 md:hidden">
+            {navigation.map((item) => <NavLink key={item.to} end={item.end} to={item.to} className={({ isActive }) => `whitespace-nowrap rounded-md px-3 py-2 text-xs font-semibold ${isActive ? "bg-blue-50 text-blue-700" : "text-slate-600"}`}>{item.label}</NavLink>)}
+          </nav>
+          <Outlet />
+        </main>
+      </div>
+    </div>
+  );
+};
 
-                        </NavLink>
-
-                        <NavLink className={({isActive})=> `flex items-center p-3 sm:px-6 gap-2 w-full hover:bg-gray-100 
-                        ${isActive && 'bg-blue-100 border-r-4 border-blue-500'}`} to={'/dashboard/manage-jobs'}>
-                        <img className='min-w-4' src={assets.home_icon} alt="" />
-                        <p className='max-sm:hidden'>Manage Jobs</p>
-
-                        </NavLink>
-
-                        <NavLink className={({isActive})=> `flex items-center p-3 sm:px-6 gap-2 w-full hover:bg-gray-100 
-                        ${isActive && 'bg-blue-100 border-r-4 border-blue-500'}`} to={'/dashboard/view-applications'}>
-                        <img className='min-w-4' src={assets.person_tick_icon} alt="" />
-                        <p className='max-sm:hidden'>View Applications</p>
-
-                        </NavLink>
-                    </ul>
-                </div>
-                <div>
-                    <Outlet />
-                </div>
-            </div>
-            </div>
-    )
-}
-export default Dashboard
+export default Dashboard;

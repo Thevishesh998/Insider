@@ -18,8 +18,18 @@
     display: none;
 }
 
+.company-marquee { overflow: hidden; }
+.company-marquee-track { display: flex; width: max-content; gap: 2.5rem; animation: company-scroll 28s linear infinite; }
+.company-marquee:hover .company-marquee-track { animation-play-state: paused; }
+@keyframes company-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 
-Custom Class names
+@keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) {
+    .company-marquee-track { animation-play-state: paused; }
+    [class*="animate-"] { animation: none !important; }
+}
+
+/* Rich text returned by job descriptions */
 .rich-text {font-size: 15px; color: #7A7B7D;}
 .rich-text p {margin-bottom: 16px;}
 .rich-text h1 {font-size:36px; font-weight:800; color: #252525; margin:20px}
@@ -32,3 +42,27 @@ Custom Class names
 .rich-text ol {margin-left: 30px; list-style-type: decimal;}
 .rich-text ul{margin-left: 30px; list-style-type: disc;}
 .rich-text li {margin-bottom: 8px;}
+
+/* Shared public-site presentation */
+.public-orb { position: absolute; border-radius: 9999px; filter: blur(1px); opacity: .32; }
+.public-orb-one { width: 20rem; height: 20rem; background: #1d4ed8; top: -13rem; left: -7rem; }
+.public-orb-two { width: 17rem; height: 17rem; background: #7c3aed; right: -8rem; bottom: -11rem; }
+.public-section + .public-section { margin-top: 6.5rem; }
+.public-card { border: 1px solid #e2e8f0; border-radius: 1.25rem; background: #fff; padding: 1.5rem; box-shadow: 0 1px 2px rgb(15 23 42 / .04); transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease; }
+.public-card:hover { border-color: #bfdbfe; box-shadow: 0 15px 30px rgb(15 23 42 / .08); transform: translateY(-2px); }
+.public-icon { display: inline-flex; height: 2.75rem; width: 2.75rem; align-items: center; justify-content: center; border-radius: .875rem; background: #eff6ff; color: #2563eb; font-size: 1.15rem; font-weight: 800; line-height: 1; }
+.public-icon-dark { background: #172554; color: #bfdbfe; }
+.public-button { display: inline-flex; align-items: center; gap: .65rem; border-radius: .75rem; padding: .8rem 1.15rem; font-size: .875rem; font-weight: 700; transition: background-color .2s ease, color .2s ease, transform .2s ease; }
+.public-button:hover { transform: translateY(-1px); }
+.public-button-primary { background: #2563eb; color: white; box-shadow: 0 8px 18px rgb(37 99 235 / .2); }
+.public-button-primary:hover { background: #1d4ed8; }
+.public-button-secondary { border: 1px solid #cbd5e1; color: #0f172a; background: white; }
+.public-button-secondary:hover { border-color: #93c5fd; color: #2563eb; }
+.public-label { display: grid; gap: .5rem; color: #334155; font-size: .8rem; font-weight: 700; }
+.public-input { width: 100%; border: 1px solid #cbd5e1; border-radius: .75rem; padding: .8rem .9rem; color: #0f172a; font-size: .9rem; font-weight: 400; outline: none; transition: border-color .2s ease, box-shadow .2s ease; }
+.public-input::placeholder { color: #94a3b8; }
+.public-input:focus { border-color: #3b82f6; box-shadow: 0 0 0 4px rgb(219 234 254); }
+.public-submit { display: inline-flex; align-items: center; justify-content: center; gap: .6rem; border-radius: .75rem; background: #2563eb; padding: .85rem 1.25rem; color: white; font-size: .875rem; font-weight: 700; transition: background-color .2s ease; }
+.public-submit:hover { background: #1d4ed8; }
+.public-map-pattern { opacity: .45; background-color: #e2e8f0; background-image: linear-gradient(30deg, #cbd5e1 12%, transparent 12.5%, transparent 87%, #cbd5e1 87.5%, #cbd5e1), linear-gradient(150deg, #cbd5e1 12%, transparent 12.5%, transparent 87%, #cbd5e1 87.5%, #cbd5e1), linear-gradient(30deg, #cbd5e1 12%, transparent 12.5%, transparent 87%, #cbd5e1 87.5%, #cbd5e1), linear-gradient(150deg, #cbd5e1 12%, transparent 12.5%, transparent 87%, #cbd5e1 87.5%, #cbd5e1); background-size: 80px 140px; background-position: 0 0, 0 0, 40px 70px, 40px 70px; }
+@media (max-width: 640px) { .public-section + .public-section { margin-top: 4.5rem; } .public-card { padding: 1.25rem; } }

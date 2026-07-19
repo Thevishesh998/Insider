@@ -12,9 +12,19 @@ const JobApplicationSchema = new mongoose.Schema({
     required: true,
   },
   jobId: { type: mongoose.Schema.Types.ObjectId, ref: "Job", required: true },
-  status: { type: String, default: "Pending" },
+  status: {
+    type: String,
+    enum: ["Pending", "Accepted", "Rejected"],
+    default: "Pending",
+  },
   date: { type: Number, required: true },
 });
+
+JobApplicationSchema.index({ companyId: 1, date: -1 });
+JobApplicationSchema.index({ companyId: 1, status: 1, date: -1 });
+JobApplicationSchema.index({ companyId: 1, jobId: 1, date: -1 });
+JobApplicationSchema.index({ jobId: 1 });
+JobApplicationSchema.index({ userId: 1, jobId: 1 }, { unique: true });
 
 const JobApplication = mongoose.model("JobApplication", JobApplicationSchema);
 

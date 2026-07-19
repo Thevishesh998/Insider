@@ -1,180 +1,54 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useEffect, useState, useContext } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
-import { assets } from "../assets/assets";
-import moment from "moment";
 import Footer from "../components/Footer";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useAuth } from "@clerk/clerk-react";
 import { AppContext } from "../context/AppContext";
+import moment from "moment";
+
+const statusStyle = { Pending: "bg-amber-50 text-amber-700", Accepted: "bg-emerald-50 text-emerald-700", Rejected: "bg-red-50 text-red-700" };
+const safeUrl = (value) => { try { const url = new URL(value); return ["http:", "https:"].includes(url.protocol) ? url.href : null; } catch { return null; } };
+
 const Applications = () => {
-  const { backendUrl } = useContext(AppContext);
+  const { backendUrl, JobCategories, JobLocations } = useContext(AppContext);
   const { getToken } = useAuth();
+  const [params, setParams] = useSearchParams();
+  const tab = params.get("tab") === "saved" ? "saved" : "applied";
+  const [applications, setApplications] = useState([]); const [savedJobs, setSavedJobs] = useState([]);
+  const [resumeUrl, setResumeUrl] = useState(""); const [resume, setResume] = useState(null);
+  const [loading, setLoading] = useState(true); const [error, setError] = useState(""); const [busyId, setBusyId] = useState("");
+  const [page, setPage] = useState(1); const [pagination, setPagination] = useState({ page: 1, totalPages: 0 });
+  const [filters, setFilters] = useState({ search: "", status: "", location: "", category: "" });
 
-  const [applications, setApplications] = useState([]);
-  const [isEdit, setIsEdit] = useState(false);
-  const [resume, setResume] = useState(null);
-  const [resumeUrl, setResumeUrl] = useState("");
-
-  const fetchApplications = async () => {
+  const fetchData = async () => {
+    setLoading(true); setError("");
     try {
       const token = await getToken();
-      const { data } = await axios.get(backendUrl + "/api/users/applications", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (data.success) {
-        setApplications(data.applications);
-      }
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Unable to load applications");
-    }
+      const endpoint = tab === "applied" ? "/api/users/applications" : "/api/users/saved-jobs";
+      const query = tab === "applied" ? { page, limit: 10, search: filters.search || undefined, status: filters.status || undefined } : { page, limit: 10, search: filters.search || undefined, location: filters.location || undefined, category: filters.category || undefined };
+      const { data } = await axios.get(backendUrl + endpoint, { headers: { Authorization: `Bearer ${token}` }, params: query });
+      if (!data.success) return setError(data.message || "Unable to load your jobs.");
+      setApplications(data.applications || []); setSavedJobs(data.jobs || []); setPagination(data.pagination || { page: 1, totalPages: 0 });
+    } catch (requestError) { setError(requestError.response?.data?.message || "Unable to load your jobs."); }
+    finally { setLoading(false); }
   };
+  const fetchUser = async () => { try { const token = await getToken(); const { data } = await axios.get(`${backendUrl}/api/users/user`, { headers: { Authorization: `Bearer ${token}` } }); if (data.success) setResumeUrl(data.user.resume || ""); } catch {} };
+  useEffect(() => { fetchData(); }, [tab, page, filters.search, filters.status, filters.location, filters.category]);
+  useEffect(() => { fetchUser(); }, []);
+  const changeTab = (value) => { setParams(value === "saved" ? { tab: "saved" } : {}); setPage(1); setFilters({ search: "", status: "", location: "", category: "" }); };
+  const saveResume = async () => { if (!resume || resume.type !== "application/pdf" || resume.size > 5 * 1024 * 1024) return toast.error("Choose a PDF resume smaller than 5 MB."); setBusyId("resume"); try { const token = await getToken(); const formData = new FormData(); formData.append("resume", resume); const { data } = await axios.post(`${backendUrl}/api/users/update-resume`, formData, { headers: { Authorization: `Bearer ${token}` } }); if (data.success) { setResumeUrl(data.resume); setResume(null); toast.success("Resume updated"); } else toast.error(data.message); } catch (e) { toast.error(e.response?.data?.message || "Unable to update resume"); } finally { setBusyId(""); } };
+  const withdraw = async (id) => { if (!window.confirm("Withdraw this pending application?")) return; setBusyId(id); try { const token = await getToken(); const { data } = await axios.delete(`${backendUrl}/api/users/applications/${id}`, { headers: { Authorization: `Bearer ${token}` } }); if (data.success) { setApplications((items) => items.filter((item) => item._id !== id)); toast.success("Application withdrawn"); } else toast.error(data.message); } catch (e) { toast.error(e.response?.data?.message || "Unable to withdraw application"); } finally { setBusyId(""); } };
+  const removeSaved = async (id) => { setBusyId(id); try { const token = await getToken(); const { data } = await axios.delete(`${backendUrl}/api/users/saved-jobs/${id}`, { headers: { Authorization: `Bearer ${token}` } }); if (data.success) { setSavedJobs((items) => items.filter((item) => item._id !== id)); toast.success("Saved job removed"); } else toast.error(data.message); } catch (e) { toast.error(e.response?.data?.message || "Unable to remove saved job"); } finally { setBusyId(""); } };
+  const resumeLink = safeUrl(resumeUrl);
 
-  const fetchUserData = async () => {
-    try {
-      const token = await getToken();
-      const { data } = await axios.get(backendUrl + "/api/users/user", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (data.success) {
-        setResumeUrl(data.user.resume || "");
-      }
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Unable to load resume");
-    }
-  };
-
-  const saveResume = async () => {
-    if (!resume) {
-      toast.error("Please select a resume first");
-      return;
-    }
-
-    try {
-      const token = await getToken();
-      const formData = new FormData();
-      formData.append("resume", resume);
-
-      const { data } = await axios.post(
-        backendUrl + "/api/users/update-resume",
-        formData,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-
-      if (data.success) {
-        setResumeUrl(data.resume);
-        setIsEdit(false);
-        setResume(null);
-        toast.success(data.message);
-      }
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Unable to update resume");
-    }
-  };
-
-  useEffect(() => {
-    fetchApplications();
-    fetchUserData();
-  }, []);
-
-
-
-  return (
-    <>
-      <Navbar />
-      <div className="container px-4 min-h-[65vh] 2xl:px-20 mx-auto my-10">
-        <h2 className="text-xl font-semibold">Your Resume</h2>
-        <div className="flex gap-2 mb-6 mt-3">
-          {isEdit ? (
-            <>
-              <label className="flex items-center" htmlFor="resumeUpload">
-                <p className="bg-blue-100 text-blue-600 px-4 py-2 rounded-lg mr-2">
-                  Select Resume
-                </p>
-                <input
-                  id="resumeUpload"
-                  onChange={(e) => setResume(e.target.files[0])}
-                  accept="application/pdf"
-                  type="file"
-                  hidden
-                />
-                <img src={assets.profile_upload_icon} alt="" />
-              </label>
-              <button
-                onClick={saveResume}
-                className="bg-green-100 border border-green-400 rounded-lg px-4 py-2"
-              >
-                Save
-              </button>
-            </>
-          ) : (
-            <div className="flex gap-2">
-              <a
-                className="bg-blue-100 text-blue-600 px-4 py-2 rounded-lg"
-                href={resumeUrl || undefined}
-              >
-                Resume
-              </a>
-              <button
-                onClick={() => setIsEdit(true)}
-                className="text-gray-500 border border-gray-300 rounded-lg px-4 py-2"
-              >
-                Edit
-              </button>
-            </div>
-          )}
-        </div>
-        <h2 className="text-xl font-semibold mb-4">Jobs Applied</h2>
-        <table className="min-w-full bg-white border rounded-lg">
-          <thead>
-            <tr>
-              <th className="py-3 px-4 border-b text-left">Company</th>
-              <th className="py-3 px-4 border-b text-left">Job Title</th>
-              <th className="py-3 px-4 border-b text-left max-sm:hidden">
-                Location
-              </th>
-              <th className="py-3 px-4 border-b text-left max-sm:hidden">
-                Date
-              </th>
-              <th className="py-3 px-4 border-b text-left">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {applications.map((job, index) =>
-              true ? (
-                <tr key={index}>
-                  <td className="py-3 px-4 flex items-center gap-2 border-b">
-                    <img className="w-8 h-8" src={job.companyId.image} alt="" />
-                    {job.companyId.name}
-                  </td>
-                  <td className="py-2 px-4 border-b">{job.jobId.title}</td>
-                  <td className="py-2 px-4 border-b max-sm:hidden">
-                    {job.jobId.location}
-                  </td>
-                  <td className="py-2 px-4 border-b max-sm:hidden">
-                    {moment(job.date).format("ll")}
-                  </td>
-                  <td className="py-2 px-4 border-b">
-                    <span
-                      className={`${job.status === "Accepted" ? "bg-green-100" : job.status === "Rejected" ? "bg-red-100" : "bg-blue-100"} px-4 py-1.5 rounded`}
-                    >
-                      {job.status}
-                    </span>
-                  </td>
-                </tr>
-              ) : null,
-            )}
-          </tbody>
-        </table>
-      </div>
-      <Footer />
-    </>
-  );
+  return <><Navbar /><main className="mx-auto min-h-[70vh] max-w-7xl px-4 py-10 sm:px-6 lg:px-8"><div className="mb-8"><p className="text-sm font-semibold text-blue-600">Candidate workspace</p><h1 className="mt-1 text-3xl font-bold tracking-tight text-slate-900">My jobs</h1><p className="mt-2 text-sm text-slate-500">Track applications, manage your resume, and revisit saved roles.</p></div>
+    <section className="mb-8 rounded-xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="font-semibold text-slate-900">Resume</h2><p className="mt-1 text-sm text-slate-500">Keep a current PDF ready for applications.</p></div><div className="flex flex-wrap gap-2">{resumeLink && <a href={resumeLink} target="_blank" rel="noopener noreferrer" className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700">View resume</a>}<label className="cursor-pointer rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">{resume ? resume.name : "Choose PDF"}<input type="file" accept="application/pdf" className="sr-only" onChange={(event) => setResume(event.target.files?.[0] || null)} /></label>{resume && <button disabled={busyId === "resume"} onClick={saveResume} className="rounded-lg border border-blue-200 px-4 py-2 text-sm font-semibold text-blue-700 disabled:opacity-50">{busyId === "resume" ? "Uploading..." : "Save resume"}</button>}</div></div></section>
+    <div className="mb-5 flex border-b border-slate-200"><button onClick={() => changeTab("applied")} className={`px-4 py-3 text-sm font-semibold ${tab === "applied" ? "border-b-2 border-blue-600 text-blue-700" : "text-slate-500"}`}>Applied jobs</button><button onClick={() => changeTab("saved")} className={`px-4 py-3 text-sm font-semibold ${tab === "saved" ? "border-b-2 border-blue-600 text-blue-700" : "text-slate-500"}`}>Saved jobs</button></div>
+    <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"><div className="border-b border-slate-100 p-4"><div className="flex flex-wrap gap-2"><input value={filters.search} onChange={(e) => { setFilters((v) => ({ ...v, search: e.target.value })); setPage(1); }} placeholder="Search jobs or companies" className="min-w-[220px] flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500" />{tab === "applied" ? <select value={filters.status} onChange={(e) => { setFilters((v) => ({ ...v, status: e.target.value })); setPage(1); }} className="rounded-lg border border-slate-200 px-3 py-2 text-sm"><option value="">All statuses</option><option>Pending</option><option>Accepted</option><option>Rejected</option></select> : <><select value={filters.location} onChange={(e) => { setFilters((v) => ({ ...v, location: e.target.value })); setPage(1); }} className="rounded-lg border border-slate-200 px-3 py-2 text-sm"><option value="">All locations</option>{JobLocations.map((v) => <option key={v}>{v}</option>)}</select><select value={filters.category} onChange={(e) => { setFilters((v) => ({ ...v, category: e.target.value })); setPage(1); }} className="rounded-lg border border-slate-200 px-3 py-2 text-sm"><option value="">All categories</option>{JobCategories.map((v) => <option key={v}>{v}</option>)}</select></>}</div></div>
+      {error ? <div className="m-5 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700"><p>{error}</p><button onClick={fetchData} className="mt-2 font-semibold underline">Try again</button></div> : loading ? <div className="p-12 text-center text-sm text-slate-500">Loading jobs...</div> : (tab === "applied" ? applications : savedJobs).length === 0 ? <div className="p-12 text-center"><p className="font-semibold text-slate-700">No {tab} jobs found</p><p className="mt-1 text-sm text-slate-500">{tab === "applied" ? "Applications you submit will appear here." : "Save roles you want to come back to."}</p><Link to="/" className="mt-4 inline-block rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white">Browse jobs</Link></div> : <div className="divide-y divide-slate-100">{tab === "applied" ? applications.map((item) => <div key={item._id} className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between"><div className="flex min-w-0 items-center gap-3">{item.company?.image && <img className="h-10 w-10 rounded-lg border object-contain" src={item.company.image} alt="" />}<div className="min-w-0"><p className="font-semibold text-slate-900">{item.job?.title || "Job no longer available"}</p><p className="mt-1 text-sm text-slate-500">{item.company?.name || "Company"} · {item.job?.location || "-"} · Applied {moment(item.date).format("ll")}</p></div></div><div className="flex items-center gap-3"><span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusStyle[item.status] || "bg-slate-100 text-slate-600"}`}>{item.status}</span>{item.status === "Pending" && <button disabled={busyId === item._id} onClick={() => withdraw(item._id)} className="text-sm font-semibold text-red-600 disabled:opacity-50">{busyId === item._id ? "Withdrawing..." : "Withdraw"}</button>}</div></div>) : savedJobs.map((job) => <div key={job._id} className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between"><div className="flex min-w-0 items-center gap-3">{job.companyId?.image && <img className="h-10 w-10 rounded-lg border object-contain" src={job.companyId.image} alt="" />}<div><p className="font-semibold text-slate-900">{job.title}</p><p className="mt-1 text-sm text-slate-500">{job.companyId?.name || "Company"} · {job.location} · {job.level}</p></div></div><div className="flex gap-3"><Link to={`/apply-job/${job._id}`} className="text-sm font-semibold text-blue-700">View job</Link><button disabled={busyId === job._id} onClick={() => removeSaved(job._id)} className="text-sm font-semibold text-red-600 disabled:opacity-50">Remove</button></div></div>)}</div>}
+      {!loading && pagination.totalPages > 1 && <div className="flex items-center justify-between border-t border-slate-100 px-5 py-4 text-sm"><span className="text-slate-500">Page {pagination.page} of {pagination.totalPages}</span><div className="flex gap-2"><button disabled={pagination.page === 1} onClick={() => setPage((p) => p - 1)} className="rounded-lg border border-slate-200 px-3 py-2 disabled:opacity-50">Previous</button><button disabled={pagination.page === pagination.totalPages} onClick={() => setPage((p) => p + 1)} className="rounded-lg border border-slate-200 px-3 py-2 disabled:opacity-50">Next</button></div></div>}
+    </section></main><Footer /></>;
 };
 export default Applications;

@@ -1,16 +1,9 @@
-import React from 'react'
-import { assets } from '../assets/assets'
-const Footer = () => {
-    return (
-        <div className='container px-4 2xl:px-20 mx-auto flex items-center justify-between gap-4 py-3 mt-20'>
-          <img width={160} src={assets.logo} alt="" />
-          <p className='flex-1 border-1 border-gray-400 pl-4 text-sm text-gray-500 max-sm:hidden'>Copyright @VibeStack.dev | All rights reserved.</p>
-          <div className='flex gap-2.5'>
-            <img width={30} src={assets.facebook_icon} alt="" />
-            <img width={30} src={assets.twitter_icon} alt="" />
-            <img width={30} src={assets.instagram_icon} alt="" />
-          </div>
-        </div>
-    )
-}
-export default Footer
+import React from "react";
+import { Link } from "react-router-dom";
+import { assets } from "../assets/assets";
+
+const social = (label, mark, href) => <a href={href} target="_blank" rel="noopener noreferrer" aria-label={label} title={label} className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 text-xs font-bold text-slate-300 hover:border-blue-400 hover:text-white">{mark}</a>;
+const itemClass = "text-sm text-slate-400 hover:text-white";
+
+const Footer = () => <footer className="mt-20 bg-slate-950 text-slate-300"><div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 md:grid-cols-[1.5fr_repeat(3,1fr)] lg:px-8"><div><Link to="/" aria-label="Job portal home"><img src={assets.logo} alt="Job portal" className="h-9 w-auto brightness-0 invert" /></Link><p className="mt-5 max-w-xs text-sm leading-6 text-slate-400">A focused place for software professionals to discover their next meaningful opportunity.</p></div><div><h2 className="text-sm font-bold text-white">Company</h2><div className="mt-4 flex flex-col gap-3"><Link to="/about" className={itemClass}>About</Link><Link to="/careers" className={itemClass}>Careers</Link><Link to="/contact" className={itemClass}>Contact</Link></div></div><div><h2 className="text-sm font-bold text-white">Resources</h2><div className="mt-4 flex flex-col gap-3"><Link to="/resources" className={itemClass}>Resources</Link><Link to="/help" className={itemClass}>Help Center</Link><Link to="/privacy" className={itemClass}>Privacy Policy</Link><Link to="/terms" className={itemClass}>Terms</Link></div></div><div><h2 className="text-sm font-bold text-white">Follow</h2><div className="mt-4 flex gap-2">{social("GitHub", "GH", "https://github.com")}{social("LinkedIn", "in", "https://www.linkedin.com")}{social("X (Twitter)", "X", "https://x.com")}{social("Instagram", "IG", "https://www.instagram.com")}</div></div></div><div className="border-t border-white/10"><div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-5 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8"><p>© {new Date().getFullYear()} Job Portal. All rights reserved.</p><p>Built for people building software.</p></div></div></footer>;
+export default Footer;

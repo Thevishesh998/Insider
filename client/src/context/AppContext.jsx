@@ -2,7 +2,6 @@ import { createContext, useEffect, useState } from "react";
 import { JobCategories, JobLocations } from "../assets/assets";
 import { toast } from "react-toastify";
 import axios from "axios";
-import AddJob from "../pages/AddJob";
 
 export const AppContext = createContext();
 export const JobContext = createContext();
@@ -52,7 +51,6 @@ export const AppContextProvider = (props) => {
 
       if (data.success) {
         setCompanyData(data.company);
-        console.log("Company Data:", data.company);
       } else {
         toast.error(data.message);
       }
@@ -65,7 +63,6 @@ export const AppContextProvider = (props) => {
   };
 
   useEffect(() => {
-    console.log("Backend URL:", backendUrl);
     fetchJobs();
 
     const storedToken = localStorage.getItem("companyToken");

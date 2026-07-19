@@ -1,4 +1,5 @@
 import Job from "../models/Job.js"
+import mongoose from "mongoose"
 
 
 
@@ -22,9 +23,10 @@ export const getJobByID = async (req,res) => {
       try {
         
         const {id} = req.params
+        if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ success: false, message: 'Invalid job ID' })
         const job = await Job.findOne({_id: id, visible: true}).populate({
             path: 'companyId',
-            select: '-password'
+            select: 'name image about industry companySize foundedYear headquarters website -_id'
         })
 
         if(!job){
