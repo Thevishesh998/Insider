@@ -127,7 +127,7 @@ const JobListing = ({ isHome = false }) => {
     <>
       {/* Current Search display */}
       {Boolean(keyword || selectedCategories.length || selectedLocations.length) && (
-        <div className="mx-auto mb-5 max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto mb-5 mt-10 max-w-7xl px-4 sm:px-6 lg:px-8">
           <h4 className="mb-2 text-sm font-semibold text-slate-700">Current search</h4>
           <div className="flex flex-wrap gap-2">
             {keyword && (
@@ -164,7 +164,7 @@ const JobListing = ({ isHome = false }) => {
 
       <button
         onClick={() => setShowFilter((prev) => !prev)}
-        className="mx-4 mb-4 rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 lg:hidden"
+        className="mx-4 mb-2 mt-9 rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 lg:hidden"
       >
         {showFilter ? "Close" : "Filters"}
       </button>
