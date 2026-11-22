@@ -16,7 +16,7 @@ const JobListing = ({ isHome = false }) => {
   const [hasResumeRecommendations, setHasResumeRecommendations] = useState(false);
   const [matchingSource, setMatchingSource] = useState(null);
   const [showFilter, setShowFilter] = useState(false);
-  const { jobs, JobCategories, JobLocations } =
+  const { jobs, jobsLoading, JobCategories, JobLocations } =
     useContext(AppContext);
   const [searchParams, setSearchParams] = useSearchParams();
   const keyword = searchParams.get("keyword") || "";
@@ -208,9 +208,9 @@ const JobListing = ({ isHome = false }) => {
         {/* Job Cards */}
         <section className="min-w-0 w-full text-slate-800 lg:w-3/4" id="job-list">
           {hasResumeRecommendations && !keyword && selectedCategories.length === 0 && selectedLocations.length === 0 && recommendedJobs.length > 0 && <div className="mb-10"><div className="mb-4"><h3 className="text-2xl font-bold tracking-tight">Recommended For You</h3><p className="mt-1 text-sm text-slate-500">{matchingSource === "manual-skills" ? "Based on the skills you selected." : matchingSource === "resume-skills" ? "Based on skills detected from your resume." : "Based on your resume category."}</p></div><div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">{recommendedJobs.slice(0, 3).map((job) => <JobCard key={job._id} job={job} isApplied={appliedJobs.includes(job._id)} isSaved={savedJobs.includes(job._id)} onSave={saveJob} />)}</div></div>}
-          <div className="mb-8 flex items-end justify-between gap-4"><div><h3 className="text-3xl font-bold tracking-tight">Latest Jobs</h3><p className="mt-2 text-slate-500">{filteredJobs.length} role{filteredJobs.length === 1 ? "" : "s"} matched to your search.</p></div></div>
+          <div className="mb-8 flex items-end justify-between gap-4"><div><h3 className="text-3xl font-bold tracking-tight">Latest Jobs</h3><p className="mt-2 text-slate-500">{jobsLoading ? "Loading latest jobs…" : `${filteredJobs.length} role${filteredJobs.length === 1 ? "" : "s"} matched to your search.`}</p></div></div>
 
-          {loadingMembership && jobs.length > 0 ? <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">{[1,2,3].map((item) => <div key={item} className="h-64 animate-pulse rounded-2xl bg-slate-100" />)}</div> : filteredJobs.length === 0 ? <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center"><h4 className="font-semibold text-slate-800">No roles match these filters</h4><p className="mt-2 text-sm text-slate-500">Try clearing a filter or searching a broader term.</p><button onClick={clearFilters} className="mt-5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white">Clear filters</button></div> : <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+          {jobsLoading || (loadingMembership && jobs.length > 0) ? <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">{[1,2,3].map((item) => <div key={item} className="h-64 animate-pulse rounded-2xl bg-slate-100" />)}</div> : filteredJobs.length === 0 ? <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center"><h4 className="font-semibold text-slate-800">No roles match these filters</h4><p className="mt-2 text-sm text-slate-500">Try clearing a filter or searching a broader term.</p><button onClick={clearFilters} className="mt-5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white">Clear filters</button></div> : <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
             {filteredJobs
               .slice((currentPage - 1) * 6, currentPage * 6)
               .map((job, index) => (

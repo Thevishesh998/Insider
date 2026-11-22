@@ -16,6 +16,7 @@ export const AppContextProvider = (props) => {
 
   const [isSearched, setIsSearched] = useState(false);
   const [jobs, setJobs] = useState([]);
+  const [jobsLoading, setJobsLoading] = useState(true);
   const [showRecruiterLogin, setShowRecruiterLogin] = useState(false);
 
   const [companyToken, setCompanyToken] = useState(null);
@@ -30,13 +31,22 @@ export const AppContextProvider = (props) => {
   // ✅ Function to fetch jobs
   const fetchJobs = async () => {
     try {
-      const { data } = await axios.get(backendUrl + "/api/jobs");
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        try {
+          const { data } = await axios.get(backendUrl + "/api/jobs", { timeout: 15000 });
 
-      if (data.success) {
-        setJobs(data.jobs)
+          if (data.success) setJobs(data.jobs);
+          return;
+        } catch (error) {
+          const shouldRetry = !error.response || error.response.status >= 500;
+          if (!shouldRetry || attempt === 2) throw error;
+          await new Promise((resolve) => setTimeout(resolve, 1000 * (attempt + 1)));
+        }
       }
     } catch (error) {
       toast.error(error.response?.data?.message || "Unable to load jobs");
+    } finally {
+      setJobsLoading(false);
     }
   };
 
@@ -83,6 +93,7 @@ export const AppContextProvider = (props) => {
     isSearched,
     setIsSearched,
     jobs,
+    jobsLoading,
     setJobs,
     JobCategories,
     JobLocations,
